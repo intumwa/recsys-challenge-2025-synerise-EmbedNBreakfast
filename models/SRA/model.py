@@ -111,7 +111,8 @@ def train_model(model, dataloader, optimizer, num_epochs=1, use_amp=True, datase
                 model=model,
                 events_dataset=dataset,
                 batch_size=128,  # You can adjust this
-                num_workers=8,  # Match your training dataloader
+                # Reduce workers to avoid Docker shm exhaustion; override via UBP_EMB_WORKERS
+                num_workers=int(os.getenv("UBP_EMB_WORKERS", "0")),
                 embedding_path=embeddings_folder / f"embeddings_epoch_{epoch + 1}.npy"
             )
 
@@ -122,7 +123,8 @@ def train_model(model, dataloader, optimizer, num_epochs=1, use_amp=True, datase
         model=model,
         events_dataset=dataset,
         batch_size=128,  # You can adjust this
-        num_workers=8,  # Match your training dataloader
+        # Reduce workers in containerized env; override via UBP_EMB_WORKERS
+        num_workers=int(os.getenv("UBP_EMB_WORKERS", "0")),
         embedding_path=embeddings_folder / "embeddings.npy"
     )
     return total_avg_loss_across_epochs / num_epochs
