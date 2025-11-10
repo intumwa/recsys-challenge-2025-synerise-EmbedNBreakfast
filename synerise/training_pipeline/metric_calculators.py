@@ -126,6 +126,6 @@ class PropensityMetricCalculator(MetricCalculator):
         )
 
     def to(self, device: torch.device):
-        self.auroc = self.val_auroc.to(device)
+        self.val_auroc = self.val_auroc.to(device)
         self.val_diversity = self.val_diversity.to(device=device)
         self.val_novelty = self.val_novelty.to(device=device)

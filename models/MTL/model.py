@@ -571,6 +571,7 @@ def train_model_with_training_pipeline(model, train_dataset, train_dataloader, v
         print(f"{torch.cuda.device_count()} GPU!")
         model = nn.DataParallel(model)
     model = model.to(device)
+    # Move metric calculators to GPU
     if hasattr(model, 'module'):
         model.module.churn_metric_calculator.to(device)
         model.module.category_metric_calculator.to(device)
@@ -717,6 +718,7 @@ def train_model(model, dataset, dataloader, optimizer, num_epochs=3, patience=3,
         print(f"Usando {torch.cuda.device_count()} GPU!")
         model = nn.DataParallel(model)
     model = model.to(device)
+    # Move metric calculators to GPU
     if hasattr(model, 'module'):
         model.module.churn_metric_calculator.to(device)
         model.module.category_metric_calculator.to(device)
