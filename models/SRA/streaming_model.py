@@ -468,8 +468,9 @@ def train_streaming_model(
                         'loss': loss.item(),
                     }, checkpoint_path)
 
-            epoch_total_loss += loss.item() * tokens.item()
-            epoch_total_tokens += tokens.item()
+            # loss is already normalized per-token, so just accumulate it
+            epoch_total_loss += loss.item()
+            epoch_total_tokens += 1  # Count batches, not tokens
 
             current_avg_loss = epoch_total_loss / max(epoch_total_tokens, 1)
 
@@ -486,7 +487,7 @@ def train_streaming_model(
         total_avg_loss_across_epochs += final_avg_loss_for_epoch
 
         print(f"Epoch {epoch + 1}/{num_epochs} - Avg Loss: {final_avg_loss_for_epoch:.4f}, "
-              f"Total Tokens: {epoch_total_tokens:,}, Global Step: {global_step}")
+              f"Total Batches: {epoch_total_tokens:,}, Global Step: {global_step}")
 
         # Save embeddings if requested
         if save_embeddings_flag and dataset is not None and embeddings_folder is not None:
