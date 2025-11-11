@@ -206,11 +206,18 @@ class StreamingSRAAutoencoder(nn.Module):
             mask = self._build_mask_slice(lengths, t0, t1)  # [B, w, 1]
 
             # Compute MSE loss on valid tokens only
-            loss = ((y_hat - y_gt) ** 2 * mask).sum()
+            # loss is sum of squared errors across [B, w, D]
+            # mask is [B, w, 1], so tokens_in_window counts valid timesteps
+            # We need to normalize by BOTH tokens AND feature dim (D)
+            loss_sum = ((y_hat - y_gt) ** 2 * mask).sum()
             tokens_in_window = mask.sum()
+            feature_dim = y_gt.shape[2]  # D=59
+
+            # Normalize by total elements (tokens * features)
+            loss = loss_sum / (tokens_in_window * feature_dim + 1e-9)
 
             total_loss += loss
-            tokens_total += tokens_in_window
+            tokens_total += 1  # Count windows for final averaging
 
             # CRITICAL: Detach hidden state to bound memory graph
             # Without this, backprop would span the entire sequence
@@ -218,10 +225,13 @@ class StreamingSRAAutoencoder(nn.Module):
 
             t0 = t1
 
-        # Normalize by total valid tokens
+        # Normalize by number of windows (each loss is already per-token-per-feature averaged)
         avg_loss = total_loss / (tokens_total + 1e-9)
 
-        return avg_loss, z, tokens_total
+        # Return actual token count for logging (reconstruct from original mask)
+        total_valid_tokens = (x != -1.0).any(dim=2).sum()
+
+        return avg_loss, z, total_valid_tokens
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
